@@ -1,4 +1,4 @@
-; $Id: template_create.pro,v 1.1 2002/10/31 17:23:31 jpmorgen Exp $
+; $Id: template_create.pro,v 1.2 2002/12/16 20:06:47 jpmorgen Exp $
 
 ; template_create
 
@@ -8,6 +8,7 @@
 
 function template_create, im, description1, description2
 
+  ON_ERROR, 2
   if N_params() eq 0 or N_params() gt 3 then $
     message,"ERROR: usage template_create, im, description1, description2"
 
@@ -77,15 +78,17 @@ function template_create, im, description1, description2
   if N_elements(x) eq nx and N_elements(y) eq ny then begin
      ;; normalize the X direction
      x = x/mean(x, /NAN)
+     ;; Doesn't seem to matter which way we go here, so stick with X direction.
+     ;; normalize the Y direction
+     ;;y = y/mean(y, /NAN)
      ;; lay the template down one column at a time
      for i=0,nx-1 do begin
         template[i,*] = x[i] * y[*]
      endfor
-     return, template
-  endif
+  endif else begin
+     message, "ERROR: unknown template description type"
+  endelse
 
-  message, "ERROR: unknown template description type";, /CONTINUE
-  template[*] = !VALUES.F_NAN
   return, template
   
 

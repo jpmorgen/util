@@ -1,5 +1,5 @@
 ;+
-; $Id: display.pro,v 1.2 2002/10/30 16:35:37 jpmorgen Exp $
+; $Id: display.pro,v 1.3 2002/12/16 20:06:01 jpmorgen Exp $
 
 ; display puts up a window with an image in it.  reuse uses a window
 ; of the same size and title, if it exists.  Specifying a filename is
@@ -30,14 +30,15 @@ pro refresh_wstack
   return
 end
 
-pro display, im, hdr, title=title, REUSE=reuse, zoom=zoom, rotate=rotate, crx=crx
+pro display, im_or_fname, hdr, title=title, REUSE=reuse, zoom=zoom, rotate=rotate, crx=crx
   COMMON display_vars
 
   ON_ERROR, 2
-  if N_elements(im) eq 0 then message, 'ERROR: no filename or image supplied'
-  if size(im, /TNAME) eq 'STRING' then im=readfits(im, hdr)
+  if N_elements(im_or_fname) eq 0 then message, 'ERROR: no filename or image supplied'
+  if size(im_or_fname, /TNAME) eq 'STRING' then im=readfits(im_or_fname, hdr) $
+  else im = im_or_fname
 
-  if N_elements(size(im, /DIMENSIONS)) ne 2 then message, 'ERROR: specify a 2D array to display.  Try im=ssgread(<arg>, /TV)'
+  if N_elements(size(im, /DIMENSIONS)) ne 2 then message, 'ERROR: specify a valid filename or a 2D array to display.'
 
   if NOT keyword_set(zoom) then zoom=1.
   
