@@ -1,11 +1,5 @@
-;    WHAM_polar_transform.pro
-
-; Tue Mar  9 09:35:26 1999  jpmorgen
-
-; cd /usr/users/jpmorgen/analysis/OI_images
-; loadct, 12
-
-function polar_transform, fname, xc, yc, phi0=phi0
+;+
+; $Id: polar_transform.pro,v 1.5 2003/06/05 14:50:06 jpmorgen Exp $
 
 ; polar_transform  Takes the polar transform of an image.  The number
 ; of rectangular image pixels contributing to each transformed pixel
