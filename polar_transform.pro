@@ -1,4 +1,4 @@
-;   WHAM_polar_transform.pro
+;    WHAM_polar_transform.pro
 
 ; Tue Mar  9 09:35:26 1999  jpmorgen
 
