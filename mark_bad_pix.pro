@@ -1,5 +1,5 @@
 ;+
-; $Id: mark_bad_pix.pro,v 1.4 2003/06/11 18:19:13 jpmorgen Exp $
+; $Id: mark_bad_pix.pro,v 1.5 2003/06/19 21:47:38 jpmorgen Exp $
 
 ; mark_bad_pix Assuming Gaussian statistics, takes an image of sigma
 ; values and returns an image with the statistically unlikely pixels
@@ -22,6 +22,7 @@ function mark_bad_pix, sigma_im, cutval=cutval
   if N_elements(badval) eq 0 then badval = !values.f_nan
   if N_elements(cutval) eq 0 then cutval = 5
   im=sigma_im
+  nan_idx = where(finite(sigma_im) eq 0, nan_count)
   badim=im
   badim[*]=0
   badidx=where(im gt cutval, count)
@@ -35,6 +36,9 @@ function mark_bad_pix, sigma_im, cutval=cutval
   ny=asize[2]
   for i=2,min([nx,ny]-1) do begin
      im=smooth(im, i, /NAN, /edge_truncate)
+     ;; Don't let smoothing un-NAN anything
+     if nan_count gt 0 then $
+       im[nan_idx] = !values.f_nan
      badidx=where(im gt cutval, count)
      if count eq 0 then return, badim
      badim[badidx] = badim[badidx] + 1
