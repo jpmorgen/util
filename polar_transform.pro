@@ -7,15 +7,21 @@
 
 function polar_transform, fname, xc, yc, phi0=phi0
 
-  image=readfits(fname,hdr) 
-  asize = size(image)
+; polar_transform  Takes the polar transform of an image.  The number
+; of rectangular image pixels contributing to each transformed pixel
+; image is contained in the optional parameter pixels
+
+pro polar_transform, im, polar_im, xc, yc, rscale=rscale, phi0=phi0, $
+                     pixels=pixels
+
+  asize = size(im)
   nx = asize(1)
   ny = asize(2)
   
   if NOT keyword_set(xc) then xc = nx/2.
   if NOT keyword_set(yc) then yc = ny/2.
   if NOT keyword_set(phi0) then phi0 = 0.
-
+  if NOT keyword_set(rscale) then rscale = 1.
 
   ;; Make arrays of radii and angles
   imx = lonarr(nx*ny)
@@ -40,11 +46,25 @@ function polar_transform, fname, xc, yc, phi0=phi0
   if count gt 0 then angles[wrapidx] = angles[wrapidx] - 360
   wrapidx = where(angles lt 0, count)
   if count gt 0 then angles[wrapidx] = angles[wrapidx] + 360
-  ;; Now make a rectangular array of radius vs. angle
-  nr = 101
-  na = 101
-  polar=fltarr(na,nr)
+
+  ;; Now make a rectangular array of radius vs. angle.
+  asize = size(polar_im)
+  if asize[0] eq 0 then begin
+     na = 360.
+     nr = ceil(max(radii)*rscale)
+  endif
+  if asize[0] eq 1 then begin
+     na = asize(1)
+     nr = ceil(max(radii)*rscale)
+  endif
+  if asize[0] eq 2 then begin
+     na = asize(1)
+     nr = asize(2)
+  endif
+
+  polar_im = fltarr(na, nr)
   pixels=fltarr(na,nr)
+
   r_step=max(radii)/(nr-1)
   a_step=360./(na-1)
 ;print,imx,imy
@@ -73,7 +93,7 @@ function polar_transform, fname, xc, yc, phi0=phi0
 ; ;            print,"idx=",idx, "al, ah",al, ah
 ; ;            print,"rl, rh",rl, rh
 ; ;            print,"x,y",x,y
-;             polar(ia,ir)=polar(ia,ir)+total(image(x,y))
+;             polar_im(ia,ir)=polar_im(ia,ir)+total(im(x,y))
 ;             pixels(ia,ir)=pixels(ia,ir)+1
 ;         end
 ;     end
@@ -86,33 +106,31 @@ function polar_transform, fname, xc, yc, phi0=phi0
      a = floor((angles(elemindex))/a_step)
      x=imx(elemindex)
      y=imy(elemindex)
-     if finite(image[x,y]) eq 1 then begin
-        polar(a,r)=polar(a,r)+image(x,y)
+     if finite(im[x,y]) eq 1 then begin
+        polar_im(a,r)=polar_im(a,r)+im(x,y)
         pixels(a,r)=pixels(a,r)+1
      endif
   endfor
 
   good_idx=where(pixels ne 0)
-  polar(good_idx)=polar(good_idx)/pixels(good_idx)
+  polar_im(good_idx)=polar_im(good_idx)/pixels(good_idx)
 
   ;; Fill in blank pixels using average of nearest neighbors
 ;  for ir=0,nr-1 do begin
 ;     pixidx=where(pixels(*,ir) gt 0, n)
 ;     if (n eq 0) then begin
-;        polar(*,r)=0
+;        polar_im(*,r)=0
 ;        print, 'Empty row', ir
 ;     end else begin
 ;        if (n le 2) then begin  ; spline doesn't like so few elements
-;           polar(*,r)=median(polar(pixidx,ir))
+;           polar_im(*,r)=median(polar_im(pixidx,ir))
 ;        end else begin
-;           new_row=spline(pixidx, polar(pixidx,ir), indgen(na))
-;           polar(*,ir)=new_row(*)
+;           new_row=spline(pixidx, polar_im(pixidx,ir), indgen(na))
+;           polar_im(*,ir)=new_row(*)
 ;        endelse
 ;     endelse
 ;     
 ;  endfor
-
-  return, polar
 
 end
 
