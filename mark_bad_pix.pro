@@ -1,5 +1,5 @@
 ;+
-; $Id: mark_bad_pix.pro,v 1.3 2003/03/10 18:36:13 jpmorgen Exp $
+; $Id: mark_bad_pix.pro,v 1.4 2003/06/11 18:19:13 jpmorgen Exp $
 
 ; mark_bad_pix Assuming Gaussian statistics, takes an image of sigma
 ; values and returns an image with the statistically unlikely pixels
@@ -14,7 +14,7 @@
 ; sigma = template_statistic(im, template)
 ; badim = mark_bad_pix(abs(sigma))
 ; badidx = where(badim gt 0, count)
-; if count gt 0 then im[badix] = !values.f_nan
+; if count gt 0 then im[badidx] = !values.f_nan
 
 ;-
 

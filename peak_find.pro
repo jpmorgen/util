@@ -1,17 +1,47 @@
-; $Id: peak_find.pro,v 1.2 2003/03/10 18:35:22 jpmorgen Exp $
+; $Id: peak_find.pro,v 1.3 2003/06/11 18:17:56 jpmorgen Exp $
 
 ; peak_find.pro  Returns the best position of the peak in the array
 ; given a variety of algorithms.  
 
-function peak_find, y, xaxis=xaxis, N_continuum=N_continuum, yerr=yerr, $
-                    error=error
+function peak_find, y_in, xaxis=xaxis_in, N_continuum=N_continuum, $
+                    yerr=yerr_in, error=error, lose_to_errors=lose_to_errors, $
+                    plot=plot, quiet=quiet
+
+  ;; The maximum fraction of points we are willing to lose before if
+  ;; there are more NANs in the error column than in the others.  If
+  ;; there are more than this fraction, then we just throw out the
+  ;; error column.
+  if NOT keyword_set(lose_to_errors) then lose_to_errors=0.85
   ;; Handle pathological cases first
-  npts = N_elements(y)
+  npts = N_elements(y_in)
   error = !values.d_nan
   if npts eq 0 then return, error
-  if NOT keyword_set(xaxis) then xaxis = indgen(npts)
-  if npts eq 1 then return, xaxis[0]
-  if npts eq 2 then begin
+
+  if NOT keyword_set(xaxis_in) then xaxis_in = indgen(npts)
+  if N_elements(xaxis_in) ne npts then $
+    message, 'ERROR: xaxis must have the same number of points as y'
+
+  ;; We need to rid the world of NANs so the fitting routines don't barf
+  good_idx = where(finite(y_in) eq 1 and $
+                   finite(xaxis_in) eq 1, count)
+  ;; But make sure we don't have too many NANs in the error column
+  if keyword_set(yerr_in) then begin
+     junk = where(finite(yerr_in) eq 1, n_err)
+     if n_err ge lose_to_errors*count then begin
+        good_idx = where(finite(y_in) eq 1 and $
+                         finite(yerr_in) eq 1 and $
+                         finite(xaxis_in) eq 1, count)
+        if count gt 0 then $
+          yerr = yerr_in[good_idx]
+     endif
+  endif
+  if count eq 0 then return, error
+
+  y = y_in[good_idx]
+  xaxis = xaxis_in[good_idx]
+  
+  if count eq 1 then return, xaxis[0]
+  if count eq 2 then begin
      error = stdev(xaxis)
      maxy = max(y, max_idx)
      if N_elements(max_idx) gt 1 then begin
@@ -26,19 +56,31 @@ function peak_find, y, xaxis=xaxis, N_continuum=N_continuum, yerr=yerr, $
   nterms = 3                    ; for [gauss/mp]fit
   if keyword_set(N_continuum) then $
     nterms = nterms + N_continuum
-  if N_elements(xaxis) ne npts then $
-    message, 'ERROR: xaxis must have the same number of points as y'
 
-  yfit = mpfitpeak(xaxis, y, params, nterms=nterms, error=yerr, perror=perror)
-  if N_elements(yfit) gt 1 then begin
+  yfit = mpfitpeak(xaxis, y, params, nterms=nterms, error=yerr, $
+                   perror=perror, status=status)
+
+  if status gt 0 then begin
+     if status ge 5 and NOT keyword_set(quiet) then $
+       message, /CONTINUE, 'WARNING: mpfitpeak returned status ' + string(status)
      error = perror[1]
+     if keyword_set(plot) then begin
+        plot, y_in, title=plot
+        plots, [params[1],params[1]], [-1E32,1E32]
+     endif
+
      return, params[1]
   endif
+
   ;; mpfitpeak seems to have failed.  Try a simple parabola
-  if npts ge 3 then begin
-     coefs = poly_fit(xaxis, y, 2, sigma=sigma)
-     ;; I don't think poly_fit ever fails if it has enough points
-     error = 0.5*sqrt((sigma[1]/coefs[2]^2) + (coefs[1]*sigma[2]/coefs[2]^2)^2)
-     return, -1*coefs[1]/(2*coefs[2])
+  coefs = poly_fit(xaxis, y, 2, sigma=sigma)
+  ;; I don't think poly_fit ever fails if it has enough points
+  error = 0.5*sqrt((sigma[1]/coefs[2]^2) + (coefs[1]*sigma[2]/coefs[2]^2)^2)
+  val = -1*coefs[1]/(2*coefs[2])
+  if keyword_set(plot) then begin
+     plot, y_in, title=plot
+     plots, [val,val], [-1E32,1E32]
   endif
+  return, val
+
 end

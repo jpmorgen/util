@@ -1,4 +1,4 @@
-; $Id: jpm_polyfit.pro,v 1.4 2003/03/10 18:35:16 jpmorgen Exp $
+; $Id: jpm_polyfit.pro,v 1.5 2003/06/11 18:17:49 jpmorgen Exp $
 
 ; jpm_Polyfit.  Does an interactive polynomail fitting in two
 ; variables.  BEWARE, y is set to NAN if a point is marked for not
@@ -72,13 +72,13 @@ function jpm_polyfit, x, y, order, bad_idx=bad_idx, title=title, noninteractive=
      if keyword_set(noninteractive) then return, coefs
   
      refit = 1
-     fity = fltarr(N_elements(y))
      wset, winnum
 
+     fity = fltarr(N_elements(y))
      for ci=0,order do begin
         fity = fity + coefs[ci]*(x)^ci
      endfor
-     
+
      ;; Blank out bad measuremets.  This is a little complicated if
      ;; you don't have error bars, but this fakes it.
      bad_meas_count = 0
@@ -141,24 +141,24 @@ function jpm_polyfit, x, y, order, bad_idx=bad_idx, title=title, noninteractive=
      endif ;; leftmost mouse button
      if !MOUSE.button eq 2 then begin
         message, /CONTINUE, 'Menu:'
+        print, 'Quit/eXit, saving polynomical fit (permanent write can be avoided later)'
         print, 'do nothing--return to Fitting'
         print, 'change Order'
         print, 'resurect All points'
-        print, 'Quit/eXit, saving polynomical fit'
         answer = ''
         for ki = 0,1000 do flush_input = get_kbrd(0)
         repeat begin
-           message, /CONTINUE, '[F], O, A, X, Q?'
+           message, /CONTINUE, '[Q/X], F, O, A?'
            answer = get_kbrd(1)
-           if byte(answer) eq 10 then answer = 'F'
+           if byte(answer) eq 10 then answer = 'Q'
            for ki = 0,1000 do flush_input = get_kbrd(0)
            answer = strupcase(answer)
         endrep until $
+          answer eq 'Q' or $
+          answer eq 'X' or $
           answer eq 'F' or $
           answer eq 'O' or $
-          answer eq 'A' or $
-          answer eq 'X' or $
-          answer eq 'Q'
+          answer eq 'A'
 
         if answer eq 'O' then begin
            order = order + 1
