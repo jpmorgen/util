@@ -1,4 +1,4 @@
-; $Id: first_peak_find.pro,v 1.3 2003/06/11 18:17:42 jpmorgen Exp $
+; $Id: first_peak_find.pro,v 1.4 2003/06/11 19:59:17 jpmorgen Exp $
 
 ; first_peak_find.pro finds the first decent-sized peak in the 1D
 ; input array starting from the left or right side.  peak_thresh is
@@ -19,7 +19,7 @@ function first_peak_find, yin, side, threshold=threshold_in, $
      peak = first_peak_find(y, 'left', threshold=threshold_in, $
                             contrast=contrast_in, yerr=yerr, error=error, $
                             plot=plot, quiet=quiet)
-     peak = npts - peak
+     peak = npts-1 - peak
      return, peak
   endif else $
     if side ne 'left' then $
