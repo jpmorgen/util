@@ -1,9 +1,10 @@
 ;+
-; $Id: rect_transform.pro,v 1.1 2003/06/05 14:50:31 jpmorgen Exp $
+; $Id: rect_transform.pro,v 1.2 2003/06/16 21:39:09 jpmorgen Exp $
 
-; polar_transform  Takes the polar transform of an image
+; rect_transform  Converts a polar transform back into a rectangular image
 
-pro rect_transform, polar_im, im, xc, yc, phi0=phi0, rscale=rscale
+pro rect_transform, polar_im, im, xc, yc, phi0=phi0, rscale=rscale, $
+                    pixels=pixels
 
   if NOT keyword_set(phi0) then phi0 = 0.
   if NOT keyword_set(rscale) then rscale = 1.
@@ -49,7 +50,7 @@ pro rect_transform, polar_im, im, xc, yc, phi0=phi0, rscale=rscale
   endfor
   
   ;; Allow for phasing the angles to pretty up final array
-  angles=angles*180./!pi+phi0
+  angles=angles*180./!pi-phi0
   wrapidx = where(angles gt 360, count)
   if count gt 0 then angles[wrapidx] = angles[wrapidx] - 360
   wrapidx = where(angles lt 0, count)
@@ -59,41 +60,8 @@ pro rect_transform, polar_im, im, xc, yc, phi0=phi0, rscale=rscale
   pixels=fltarr(nx,ny)
   r_step=max(radii)/(nr-1)
   a_step=360./(na-1)
-;print,imx,imy
 
-; ; Try to fill in all the pixels in each row--didn't work
-; for ir=0,nr-1 do begin
-;     rl = (ir) * r_step
-;     rh = (ir + 1) * r_step
-;     ridx=where((radii ge rl) and (radii lt rh))
-; ;    print,'ridx=',ridx
-; ;    print,'radii(ridx)=',radii(ridx)
-; ;    print,'angles(ridx)=',angles(ridx)
-;     for ia=0,na-1 do begin
-;         al = (ia) * a_step - 180.
-;         ah = (ia + 1) * a_step - 180.
-; ;        print,'ridx=',ridx
-; ;        print,"al, ah",al, ah
-; ;        print,"rl, rh",rl, rh
-;         idx=where((angles(ridx) ge al) and (angles(ridx) lt ah),n)
-;         if (n gt 0) then begin
-;             x=imx(ridx(idx))
-;             y=imy(ridx(idx))
-; ;            print,'idx=', idx
-; ;            print,'ridx(idx)=', ridx(idx)
-; ;            print,'radii(ridx(idx))=',radii(ridx(idx))
-; ;            print,"idx=",idx, "al, ah",al, ah
-; ;            print,"rl, rh",rl, rh
-; ;            print,"x,y",x,y
-;             polar(ia,ir)=polar(ia,ir)+total(image(x,y))
-;             pixels(ia,ir)=pixels(ia,ir)+1
-;         end
-;     end
-; end
-
-  ;; This is the easy way to do the transformation, but it leaves a
-  ;; lot of empty pixels
-  for elemindex=long(0),(nx-1)*(ny-1) do begin
+  for elemindex=long(0),nx*ny-1 do begin
      r = floor(radii(elemindex)/r_step)
      a = floor((angles(elemindex))/a_step)
      x=imx(elemindex)
@@ -106,22 +74,5 @@ pro rect_transform, polar_im, im, xc, yc, phi0=phi0, rscale=rscale
 
   good_idx=where(pixels ne 0)
   im[good_idx] = im[good_idx]/pixels[good_idx]
-
-  ;; Fill in blank pixels using average of nearest neighbors
-;  for ir=0,nr-1 do begin
-;     pixidx=where(pixels(*,ir) gt 0, n)
-;     if (n eq 0) then begin
-;        polar(*,r)=0
-;        print, 'Empty row', ir
-;     end else begin
-;        if (n le 2) then begin  ; spline doesn't like so few elements
-;           polar(*,r)=median(polar(pixidx,ir))
-;        end else begin
-;           new_row=spline(pixidx, polar(pixidx,ir), indgen(na))
-;           polar(*,ir)=new_row(*)
-;        endelse
-;     endelse
-;     
-;  endfor
 
 end

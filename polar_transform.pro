@@ -1,5 +1,5 @@
 ;+
-; $Id: polar_transform.pro,v 1.5 2003/06/05 14:50:06 jpmorgen Exp $
+; $Id: polar_transform.pro,v 1.6 2003/06/16 21:39:02 jpmorgen Exp $
 
 ; polar_transform  Takes the polar transform of an image.  The number
 ; of rectangular image pixels contributing to each transformed pixel
@@ -8,7 +8,7 @@
 pro polar_transform, im, polar_im, xc, yc, rscale=rscale, phi0=phi0, $
                      pixels=pixels
 
-  asize = size(im)
+  asize = size(im) 
   nx = asize(1)
   ny = asize(2)
   
@@ -35,7 +35,7 @@ pro polar_transform, im, polar_im, xc, yc, rscale=rscale, phi0=phi0, $
   endfor
   
   ;; Allow for phasing the angles to pretty up final array
-  angles=angles*180./!pi+phi0
+  angles=angles*180./!pi-phi0
   wrapidx = where(angles gt 360, count)
   if count gt 0 then angles[wrapidx] = angles[wrapidx] - 360
   wrapidx = where(angles lt 0, count)
@@ -45,11 +45,11 @@ pro polar_transform, im, polar_im, xc, yc, rscale=rscale, phi0=phi0, $
   asize = size(polar_im)
   if asize[0] eq 0 then begin
      na = 360.
-     nr = ceil(max(radii)*rscale)
+     nr = floor(max(radii)*rscale)
   endif
   if asize[0] eq 1 then begin
      na = asize(1)
-     nr = ceil(max(radii)*rscale)
+     nr = floor(max(radii)*rscale)
   endif
   if asize[0] eq 2 then begin
      na = asize(1)
@@ -95,7 +95,7 @@ pro polar_transform, im, polar_im, xc, yc, rscale=rscale, phi0=phi0, $
 
   ;; This is the easy way to do the transformation, but it leaves a
   ;; lot of empty pixels
-  for elemindex=long(0),(nx-1)*(ny-1) do begin
+  for elemindex=long(0),nx*ny-1 do begin
      r = floor(radii(elemindex)/r_step)
      a = floor((angles(elemindex))/a_step)
      x=imx(elemindex)
