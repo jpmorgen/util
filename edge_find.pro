@@ -1,4 +1,4 @@
-; $Id: edge_find.pro,v 1.2 2003/03/10 18:35:02 jpmorgen Exp $
+; $Id: edge_find.pro,v 1.3 2003/05/02 15:08:43 jpmorgen Exp $
 
 ; edge_find.pro finds the first decent-sized edge in the 1D input
 ; array starting from the left or right side.  The threshold is a
@@ -20,8 +20,10 @@ function edge_find, yin, side, contrast=contrast, yerr=yerr, error=error, plot=p
 
   ;; If we got here, we are doing a standard edge finding from the
   ;; left side of the array.  We are looking for the first edge >
-  ;; threshold
+  ;; threshold.  This is some what customized to the SSG code at the
+  ;; moment, hacking around to see what works best.
   dy = deriv(yin)
+
   ;; I am not sure how to handle errors eith derivatives.  Let's at
   ;; least do it proportionally
   if keyword_set(yerr) then begin
