@@ -1,4 +1,4 @@
-; $Id: edge_find.pro,v 1.4 2003/06/11 18:17:23 jpmorgen Exp $
+; $Id: edge_find.pro,v 1.5 2003/06/11 19:49:31 jpmorgen Exp $
 
 ; edge_find.pro finds the first decent-sized edge in the 1D input
 ; array starting from the left or right side.  The threshold is a
@@ -14,7 +14,7 @@ function edge_find, yin, side, contrast=contrast, yerr=yerr, error=error, plot=p
      if keyword_set(yerr) then $
        yerr = reverse(yerr)
      edge = edge_find(y, 'left', contrast=contrast, yerr=yerr, error=error, plot=plot)
-     edge = npts - edge
+     edge = npts-1 - edge
      return, edge
   endif else $
     if side ne 'left' then $
