@@ -1,4 +1,4 @@
-; $Id: template_create.pro,v 1.2 2002/12/16 20:06:47 jpmorgen Exp $
+; $Id: template_create.pro,v 1.3 2003/03/10 18:36:29 jpmorgen Exp $
 
 ; template_create
 
@@ -37,18 +37,23 @@ function template_create, im, description1, description2
      ;; be called for this case)
      if N_elements(description1) eq N_elements(im) then return, description1
 
-     ;; x or y direction only--finished up below
+     ;; x or y direction only.  NOTE, since we normlize the X
+     ;; direction below, but not the Y direction, we have to
+     ;; artificially inflate Y so that we get the correct template back
      if N_elements(description1) eq nx then begin
-        x = description1
-        y = 1.
-     endif else begin
-        if N_elements(description1) eq ny then begin
-           y = description1
-           x = 1.
-        endif else $
-          message, "ERROR: template description must be the same size as on of the the image axes"
-     endelse
-  endif
+        for i=0,nx-1 do begin
+           template[i,*] = description1[i]
+        endfor
+        return, template
+     endif
+     if N_elements(description1) eq ny then begin
+        for i=0,ny-1 do begin
+           template[*,i] = description1[i]
+        endfor
+        return, template
+     endif else $
+       message, "ERROR: template description must be the same size as on of the the image axes"
+  endif ;; single description cases
 
   ;; handle two vector cases
   if N_elements(description1) gt 0 and N_elements(description2) gt 0 then begin
@@ -76,11 +81,9 @@ function template_create, im, description1, description2
 
   ;; Make the 2-description template
   if N_elements(x) eq nx and N_elements(y) eq ny then begin
-     ;; normalize the X direction
      x = x/mean(x, /NAN)
-     ;; Doesn't seem to matter which way we go here, so stick with X direction.
-     ;; normalize the Y direction
-     ;;y = y/mean(y, /NAN)
+     ;; Doesn't seem to matter which way we go here, so normalize the
+     ;; X direction, not in the y
      ;; lay the template down one column at a time
      for i=0,nx-1 do begin
         template[i,*] = x[i] * y[*]

@@ -1,12 +1,33 @@
-; $Id: jpm_polyfit.pro,v 1.3 2002/12/16 18:26:57 jpmorgen Exp $
+; $Id: jpm_polyfit.pro,v 1.4 2003/03/10 18:35:16 jpmorgen Exp $
 
-; jpm_Polyfit.  Does an interactive polynomail fitting in two variables
+; jpm_Polyfit.  Does an interactive polynomail fitting in two
+; variables.  BEWARE, y is set to NAN if a point is marked for not
+; fitting.  Make sure you save the input y values in the calling
+; routine if you need to.
 
 
-function jpm_polyfit, x, y, order, title=title, noninteractive=noninteractive, window=winnum, xtitle=xtitle, ytitle=ytitle, xtickunits=xtickunits, measure_errors=measure_errors
+function jpm_polyfit, x, y, order, bad_idx=bad_idx, title=title, noninteractive=noninteractive, window=winnum, xtitle=xtitle, ytitle=ytitle, xtickunits=xtickunits, measure_errors=measure_errors, MJD=MJD
 
   if NOT keyword_set(order) then order=0
   if NOT keyword_set(winnum) then winnum=7
+  nx = N_elements(x)
+  if nx ne N_elements(y) then $
+    message, 'ERROR: X and Y must have the same number of elements'
+
+  y_save = y
+  bad_stack = intarr(nx)
+  bad_stack[*] = -1
+
+  ;; bad_idx is, for instance, the set of point not used in the last
+  ;; fit.  See calling routines.
+  if keyword_set(bad_idx) then begin
+     if bad_idx[0] ne -1 then begin
+        y[bad_idx] = !values.f_nan
+        for i=0,N_elements(bad_idx)-1 do begin
+           push, bad_idx[i], bad_stack, null=-1
+        endfor
+     endif
+  endif
 
   plus = 1
   asterisk = 2
@@ -25,17 +46,31 @@ function jpm_polyfit, x, y, order, title=title, noninteractive=noninteractive, w
 
   window,winnum
 
+  ;; Ndays are referenced to modified Julian day.  IDL plotting
+  ;; routines are referenced to JD, so there needs to be an offset in
+  ;; the displayed values, but not in the calulated values.
+  plotx = x
+  if keyword_set(MJD) then $
+    plotx = x-0.5
+
   repeat begin
      good_idx = where(finite(y) eq 1 and finite(x) eq 1, count)
      if count eq 0 then begin
          message, /CONTINUE, 'All points deleted, returning 0'
          return, 0
      endif
-     coefs = poly_fit(x[good_idx], y[good_idx], order, $
-                      measure_errors=measure_errors)
+     if keyword_set(measure_errors) then begin
+        good_idx = where(finite(y) eq 1 and finite(x) eq 1 and $
+                         finite(measure_errors) eq 1 and $
+                         measure_errors ne 0, count)
+        coefs = poly_fit(x[good_idx], y[good_idx], order, $
+                        measure_errors=abs(measure_errors[good_idx]))
+     endif else begin
+        coefs = poly_fit(x[good_idx], y[good_idx], order)
+     endelse
+
      if keyword_set(noninteractive) then return, coefs
   
-
      refit = 1
      fity = fltarr(N_elements(y))
      wset, winnum
@@ -44,26 +79,42 @@ function jpm_polyfit, x, y, order, title=title, noninteractive=noninteractive, w
         fity = fity + coefs[ci]*(x)^ci
      endfor
      
-     plot, x, y, $
+     ;; Blank out bad measuremets.  This is a little complicated if
+     ;; you don't have error bars, but this fakes it.
+     bad_meas_count = 0
+     good_meas_idx = indgen(N_elements(good_idx))
+     if keyword_set(measure_errors) then begin
+        bad_meas_idx = where(measure_errors[good_idx] le 0, bad_meas_count, $
+                             complement=good_meas_idx)
+     endif
+
+     plot, plotx[good_idx[good_meas_idx]], y[good_idx[good_meas_idx]], $
            title=title, $
            xtickunits=xtickunits, $
-           xrange=[min(x[good_idx], /NAN), $
-                   max(x[good_idx], /NAN)], $
+           xrange=[min(plotx[good_idx], /NAN), $
+                   max(plotx[good_idx], /NAN)], $
            yrange=[min(y[good_idx], /NAN), $
                    max(y[good_idx], /NAN)], $
-           xstyle=2, ystyle=2, psym=plus, $
+           xstyle=2, ystyle=2, psym=psym_x, $
            xtitle=xtitle, $
            ytitle=ytitle
-     oplot, x, fity
+     if bad_meas_count gt 0 then begin
+        oplot, plotx[good_idx[bad_meas_idx]], y[good_idx[bad_meas_idx]], $
+               psym=square
+        legend, ['Good measurement, not replaced by poly fit', 'Bad measurement, replaced by poly fit'], psym=[psym_x, square], pos=pos, /norm
+     endif
+     oplot, plotx, fity
      if keyword_set(measure_errors) then $
-       oploterr, x[good_idx], y[good_idx], measure_errors
+       oploterr, plotx[good_idx], y[good_idx], measure_errors[good_idx]
+
+
 
      message, /CONTINUE, 'Fit coefficients'
      print, coefs
 
      ;; User selects a bad region which may or may not include any
      ;; points
-     message, /CONTINUE, 'Select bad points with leftmost mouse button (drag works, but no box is drawn yet--sorry), middle button changes the polynomial order, rightmost button exits'
+     message, /CONTINUE, 'Select bad points with leftmost mouse button (drag works, but no box is drawn yet--sorry), middle button brings up menu, rightmost button resurrects last deleted point'
      cursor, x1, y1, /DOWN, /DATA
      cursor, x2, y2, /UP, /DATA
      ;; Get the corners straight
@@ -74,30 +125,75 @@ function jpm_polyfit, x, y, order, title=title, noninteractive=noninteractive, w
         temp = y1 & y1 = y2 & y2 = temp
      endif
      if !MOUSE.button eq 1 then begin
-        bad_idx = where(x1 lt x and x lt x2 and $
+        bad_idx = where(x1 lt plotx and plotx lt x2 and $
                         y1 lt y and y lt y2, $
                         count)
         if count eq 0 then begin
-           dxs = x - x1
+           dxs = plotx - x1
            dys = y - y1
            dists = dxs*dxs + dys*dys
            junk = min(dists, bad_idx, /NAN)
         endif
         y[bad_idx] = !values.f_nan
+        for i=0,N_elements(bad_idx)-1 do begin
+           push, bad_idx[i], bad_stack, null=-1
+        endfor
      endif ;; leftmost mouse button
      if !MOUSE.button eq 2 then begin
-        order = order + 1
+        message, /CONTINUE, 'Menu:'
+        print, 'do nothing--return to Fitting'
+        print, 'change Order'
+        print, 'resurect All points'
+        print, 'Quit/eXit, saving polynomical fit'
+        answer = ''
+        for ki = 0,1000 do flush_input = get_kbrd(0)
         repeat begin
-           message, /CONTINUE, 'Enter new order [' + string(order) + ']'
+           message, /CONTINUE, '[F], O, A, X, Q?'
            answer = get_kbrd(1)
-        endrep until (byte(answer) ge 48 and byte(answer) le 57) $
-          or  byte(answer) eq 10
-        if byte(answer) ne 10 then order = fix(answer)
-     endif
+           if byte(answer) eq 10 then answer = 'F'
+           for ki = 0,1000 do flush_input = get_kbrd(0)
+           answer = strupcase(answer)
+        endrep until $
+          answer eq 'F' or $
+          answer eq 'O' or $
+          answer eq 'A' or $
+          answer eq 'X' or $
+          answer eq 'Q'
+
+        if answer eq 'O' then begin
+           order = order + 1
+           for ki = 0,1000 do flush_input = get_kbrd(0)
+           repeat begin
+              message, /CONTINUE, 'Enter new order [' + string(order) + ']'
+              answer = get_kbrd(1)
+           endrep until (byte(answer) ge 48 and byte(answer) le 57) $
+             or  byte(answer) eq 10
+           if byte(answer) ne 10 then order = fix(answer)
+           for ki = 0,1000 do flush_input = get_kbrd(0)
+        endif ;; O
+
+        if answer eq 'A' then begin
+           idx = pop(bad_stack, null=-1)
+           while idx ne -1 do begin
+             y[idx] = y_save[idx]
+             idx = pop(bad_stack, null=-1)
+          endwhile
+        endif ;; A
+
+        if answer eq 'Q' or answer eq 'X' then begin
+           message, /CONTINUE, 'DONE'
+           refit = 0
+        endif ;; Q/X
+
+     endif ;; Mouse button 2
      if !MOUSE.button eq 4 then begin
-        message, /CONTINUE, 'DONE'
-        refit = 0
-     endif
+        idx = pop(bad_stack, null=-1)
+        if idx eq -1 then begin
+           message, /CONTINUE, 'ALL POINTS RESURRECTED'
+        endif else begin
+           y[idx] = y_save[idx]
+        endelse
+     endif ;; Mouse 4
   endrep until refit eq 0
 
 

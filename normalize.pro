@@ -1,12 +1,14 @@
-; $Id: normalize.pro,v 1.1 2002/12/16 20:06:34 jpmorgen Exp $
+; $Id: normalize.pro,v 1.2 2003/03/10 18:36:23 jpmorgen Exp $
 
-; Normalize an image, setting all pixels below cut to NAN
+; Normalize an array of arbitrary dimensions, setting all values below
+; cut to NAN
 
-function normalize, input_im, cut
+function normalize, input_im, cut, factor=factor
   ON_ERROR, 2
   if NOT keyword_set(cut) then cut = 0
   if cut lt 0 or cut ge 1 then $
     message, 'ERROR: cut must be between 0 and 1 (inclusive)'
+
   ;; Start with max pixel = 1
   imax = max(input_im, /NAN)
   if imax le 0 then $
@@ -21,6 +23,8 @@ function normalize, input_im, cut
      im = im/mean(im[good_idx], /NAN)
      good_idx = where(im gt cut, count)
   endwhile
+
+  factor = median(im/input_im)
 
   return, im
 end
