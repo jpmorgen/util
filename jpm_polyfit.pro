@@ -1,9 +1,9 @@
-; $Id: jpm_polyfit.pro,v 1.1 2002/11/22 19:46:22 jpmorgen Exp $
+; $Id: jpm_polyfit.pro,v 1.2 2002/11/26 00:25:46 jpmorgen Exp $
 
 ; jpm_Polyfit.  Does an interactive polynomail fitting in two variables
 
 
-function jpm_polyfit, x, y, order, title=title, noninteractive=noninteractive, window=winnum, xtitle=xtitle, ytitle=ytitle, xtickunits=xtickunits
+function jpm_polyfit, x, y, order, title=title, noninteractive=noninteractive, window=winnum, xtitle=xtitle, ytitle=ytitle, xtickunits=xtickunits, measure_errors=measure_errors
 
   if NOT keyword_set(order) then order=0
   if NOT keyword_set(winnum) then winnum=7
@@ -26,7 +26,8 @@ function jpm_polyfit, x, y, order, title=title, noninteractive=noninteractive, w
 
   repeat begin
      good_idx = where(finite(y) eq 1)
-     coefs = poly_fit(x[good_idx], y[good_idx], order)
+     coefs = poly_fit(x[good_idx], y[good_idx], order, $
+                      measure_errors=measure_errors)
      if keyword_set(noninteractive) then return, coefs
   
 
@@ -49,6 +50,11 @@ function jpm_polyfit, x, y, order, title=title, noninteractive=noninteractive, w
            xtitle=xtitle, $
            ytitle=ytitle
      oplot, x, fity
+     if keyword_set(measure_errors) then $
+       oploterr, x, y, measure_errors
+
+     message, /CONTINUE, 'Fit coefficients'
+     print, coefs
 
      ;; User selects a bad point
      message, /CONTINUE, 'Select bad points with leftmost mouse button, rightmost button exits'
@@ -61,7 +67,13 @@ function jpm_polyfit, x, y, order, title=title, noninteractive=noninteractive, w
         y[bad_idx] = !values.f_nan
      endif ;; leftmost mouse button
      if !MOUSE.button eq 2 then begin
-        message, /CONTINUE, 'HEY, I said left or right buttons, not middle!'
+        order = order + 1
+        repeat begin
+           message, /CONTINUE, 'Enter new order [' + string(order) + ']'
+           answer = get_kbrd(1)
+        endrep until (byte(answer) ge 48 and byte(answer) le 57) $
+          or  byte(answer) eq 10
+        if byte(answer) ne 10 then order = fix(answer)
      endif
      if !MOUSE.button eq 4 then begin
         message, /CONTINUE, 'DONE'
