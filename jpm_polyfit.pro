@@ -1,4 +1,4 @@
-; $Id: jpm_polyfit.pro,v 1.5 2003/06/11 18:17:49 jpmorgen Exp $
+; $Id: jpm_polyfit.pro,v 1.6 2003/06/19 21:48:16 jpmorgen Exp $
 
 ; jpm_Polyfit.  Does an interactive polynomail fitting in two
 ; variables.  BEWARE, y is set to NAN if a point is marked for not
@@ -44,7 +44,8 @@ function jpm_polyfit, x, y, order, bad_idx=bad_idx, title=title, noninteractive=
   dash_3dot = 4
   long_dash=5
 
-  window,winnum
+  if NOT keyword_set(noninteractive) then $
+    window,winnum
 
   ;; Ndays are referenced to modified Julian day.  IDL plotting
   ;; routines are referenced to JD, so there needs to be an offset in
