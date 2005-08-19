@@ -52,7 +52,7 @@
 ; Created Mon Apr 15 11:00:59 2002  jpmorgen
 ; Added keywords and generalized Fri Jul 29 11:47:45 2005  jpmorgen
 ;
-; $Id: fig_of_rot.pro,v 1.4 2005/08/02 20:47:48 jpmorgen Exp $
+; $Id: fig_of_rot.pro,v 1.5 2005/08/19 20:48:51 jpmorgen Exp $
 ;-
 ; 
 
@@ -94,10 +94,12 @@ function fig_of_rot, f, dims=dims, center=center, missing=missing
   CATCH, /CANCEL
   ;; Done checking command line parameters
 
-  ;; from Carey Woodward's radbin.  Quickly fill arrays with
-  ;; delta x and delta y values from center
-  xx = areplicate(findgen(dims[0])-center[0],dims[1],1)
-  yy = areplicate(findgen(dims[1])-center[1],dims[0])
+  ;; From Craig Markwardt's mpfit2dfun
+  xr = findgen(dims[0])-center[0]
+  yc = findgen(dims[1])-center[1]
+  xx = xr # (yc*0 + 1)
+  yy = (xr*0 + 1) # yc
+
   rr = sqrt(xx^2 + yy^2)
 
   return, interpolate(f, rr, missing=missing)
