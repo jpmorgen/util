@@ -9,7 +9,7 @@
 ;	simple modeling
 ;
 ; CALLING SEQUENCE:
-;	im = fig_of_rot(f)
+;	im = fig_of_rot(f, dims=dims, center=center, missing=missing)
 ;
 ; INPUTS:
 ;	f: The 1D vector to be transformed into a figure of rotation.  
@@ -52,7 +52,7 @@
 ; Created Mon Apr 15 11:00:59 2002  jpmorgen
 ; Added keywords and generalized Fri Jul 29 11:47:45 2005  jpmorgen
 ;
-; $Id: fig_of_rot.pro,v 1.5 2005/08/19 20:48:51 jpmorgen Exp $
+; $Id: fig_of_rot.pro,v 1.6 2008/09/25 18:40:48 jpmorgen Exp $
 ;-
 ; 
 
@@ -76,14 +76,14 @@ function fig_of_rot, f, dims=dims, center=center, missing=missing
 
   ;; Get default output image size
   if NOT keyword_set(dims) then begin
-     nx = 2 * N_elements(f) + 1
+     dims = [2 * N_elements(f) + 1, 2 * N_elements(f) + 1]
   endif
   if N_elements(dims) ne 2 then $
     message, 'ERROR: this currently only works for 2D arrays'
 
-  ;; Get center
+  ;; Get center -- beware definition of pixel
   if NOT keyword_set(center) then begin
-     center = [dims[0]/2., dims[1]/2.]
+     center = [dims[0]/2. - 0.5, dims[1]/2. - 0.5]
   endif
   if N_elements(center) ne 2 then $
     message, 'ERROR: the center keyword must contain 2 elements.'
