@@ -1,4 +1,4 @@
-; $Id: first_peak_find.pro,v 1.4 2003/06/11 19:59:17 jpmorgen Exp $
+; $Id: first_peak_find.pro,v 1.5 2014/06/26 16:36:17 jpmorgen Exp $
 
 ; first_peak_find.pro finds the first decent-sized peak in the 1D
 ; input array starting from the left or right side.  peak_thresh is
@@ -8,17 +8,20 @@
 ; recognize it as a peak.  peak_find is used to get the best center.
 
 function first_peak_find, yin, side, threshold=threshold_in, $
-  contrast=contrast_in, error=error, plot=plot, yerr=yerr, quiet=quiet
+  contrast=contrast_in, error=error, plot=plot, yerr=yerr, quiet=quiet, $
+  poly=poly
 
   y = yin
   npts = N_elements(y)
+  if npts lt 2 then $
+    return, 0
   side = strlowcase(side)
   ;; and from the left
   if side eq 'right' then begin
      y = reverse(y)
      peak = first_peak_find(y, 'left', threshold=threshold_in, $
                             contrast=contrast_in, yerr=yerr, error=error, $
-                            plot=plot, quiet=quiet)
+                            plot=plot, quiet=quiet, poly=poly)
      peak = npts-1 - peak
      return, peak
   endif else $
@@ -30,7 +33,8 @@ function first_peak_find, yin, side, threshold=threshold_in, $
   ;; elements.
   pos_idx = where(y gt 0, count)
   if count lt 3 then begin
-     message, 'WARNING: input array has less than 3 positive elements.  Subtracting the minimum element from all points', /CONTINUE
+     if NOT keyword_set(quiet) then $
+       message, 'WARNING: input array has less than 3 positive elements.  Subtracting the minimum element from all points', /CONTINUE
      y = y - min(y, /NAN)
   endif
 
@@ -49,7 +53,7 @@ function first_peak_find, yin, side, threshold=threshold_in, $
 
   ;; Where handles NAN properly in this context
   peak_idx = where(y ge threshold, count)
-  if count eq 0 then message, 'ERROR: Threshold of ' + string(threshold_in) 
+  if count eq 0 then message, 'ERROR: Threshold of ' + string(threshold_in) + ' too high'
 
   ;; Start from the left side down low
   left_idx = peak_idx[0]
@@ -83,8 +87,8 @@ function first_peak_find, yin, side, threshold=threshold_in, $
   symmetric_error = (right_idx-left_idx)/2.
 
   small_reg_fit_peak = peak_find(y[left_idx:right_idx], yerr=yerr, $
-                                 error=small_reg_error, quiet=quiet) $
-                       + left_idx
+                                 error=small_reg_error, quiet=quiet, $
+                                poly=poly) + left_idx
 
   ;; Don't bother with a large region if we have a narrow peak
   large_reg_fit_peak = !values.f_nan
@@ -108,8 +112,7 @@ function first_peak_find, yin, side, threshold=threshold_in, $
      
      large_reg_fit_peak = peak_find(y[left_idx:right_idx], $
                                     yerr=yerr, error=large_reg_error, $
-                                    quiet=quiet) $
-                          + left_idx
+                                    quiet=quiet, poly=poly) + left_idx
   endif ;; Large region needed
      
   ;; Select best peak among our several choices.  There are two things
