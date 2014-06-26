@@ -1,4 +1,76 @@
-; $Id: first_peak_find.pro,v 1.5 2014/06/26 16:36:17 jpmorgen Exp $
+;+
+; NAME: first_peak_find
+;
+
+; PURPOSE: Finds the first decent-sized peak in the 1D input array
+; starting from the left or right side
+
+;
+; CATEGORY: fitting
+;
+; CALLING SEQUENCE: 
+
+; peak = first_peak_find(y, ['left' | 'right'], threshold=threshold, $
+;   contrast=contrast, error=error, plot=plot, yerr=yerr, quiet=quiet, $
+;   poly=poly
+;
+; DESCRIPTION: Uses threshold and contrast to spot the first value in
+;   array y that is a decent-sized peak.  Then uses peak_find to
+;   get the best center and error bars of that peak coordinate.
+;   Assumes that the peak value is above zero.
+;
+; INPUTS:
+;   y: 1D array in which it find the peak
+;   side: 'left' or 'right'
+;
+; OPTIONAL INPUTS:
+;
+; KEYWORD PARAMETERS:
+;
+;   threshold: fraction of maximum value of y that the peak
+;   value of the first peak must exceed.  Default = 0.5
+;
+;   contrast: amount down from the candidate peak the algorithm
+;   goes in order to set the left and right limits for the final
+;   call to peak_find.  Default = 0.2*threshold
+;
+;   error: error estimate on peak index (from peak_find)
+;
+;   /plot: make a plot
+;
+;   yerr: error bars on yin
+;
+;   /quiet: don't print WARNING messages.  Passed to peak_find
+;
+;   /poly: force use of polynomial fitting in peak_find
+;
+; OUTPUTS:
+;   return value is index of first peak
+;
+; OPTIONAL OUTPUTS:
+;
+; COMMON BLOCKS:  
+;   Common blocks are ugly.  Consider using package-specific system
+;   variables.
+;
+; SIDE EFFECTS:
+;
+; RESTRICTIONS:
+;
+; PROCEDURE:
+;
+; EXAMPLE:
+;
+; MODIFICATION HISTORY:
+;
+; $Id: first_peak_find.pro,v 1.6 2014/06/26 17:20:09 jpmorgen Exp $
+;
+; $Log: first_peak_find.pro,v $
+; Revision 1.6  2014/06/26 17:20:09  jpmorgen
+; Improved documentation
+;
+;-
+; $Id: first_peak_find.pro,v 1.6 2014/06/26 17:20:09 jpmorgen Exp $
 
 ; first_peak_find.pro finds the first decent-sized peak in the 1D
 ; input array starting from the left or right side.  peak_thresh is
