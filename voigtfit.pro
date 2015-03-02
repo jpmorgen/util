@@ -1,11 +1,13 @@
 ; +
 
-; $Id: voigtfit.pro,v 1.1 2015/03/02 21:50:09 jpmorgen Exp $
+; $Id: voigtfit.pro,v 1.2 2015/03/02 21:55:16 jpmorgen Exp $
 
 ; Voigtfit.  Inspired by Carey Woordward's (woolrc@aya.yale.edu)
 ; program of the same name (aka VFudgit) that ran in Fudgit, a
 ; freely distrubuted function fitting package.  This uses Craig
 ; Markwardt's mpfit IDL package as its base
+
+;; NOTE: this became the PFO package
 
 
 ;; Note, AUTODERIVATIVE must be used at the moment, since I don't
