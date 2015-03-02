@@ -1,6 +1,6 @@
 ; +
 
-; $Id: voigtspec.pro,v 1.1 2002/12/16 18:26:32 jpmorgen Exp $
+; $Id: voigtspec.pro,v 1.2 2015/03/02 21:49:45 jpmorgen Exp $
 
 ; voigspec.pro This extracts the continuum and Voigt parameters from a
 ; params/parinfo structure, makes the continuum and passes the rest of
@@ -30,9 +30,10 @@ function voigtspec, X, params, parinfo=parinfo, $
   ;; Make tokens for everything
   vfid_cont = 1
   vfid_center = 2
-  vfid_dop = 3
-  vfid_lor = 4
-  vfid_area = 5
+  vfid_area = 3
+  vfid_ew = 3
+  vfid_dop = 4
+  vfid_lor = 5
   vfid_first = vfid_center
   vfid_last = vfid_area
 
