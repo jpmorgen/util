@@ -1,11 +1,11 @@
-; $Id: peak_find.pro,v 1.3 2003/06/11 18:17:56 jpmorgen Exp $
+; $Id: peak_find.pro,v 1.4 2015/03/02 21:52:05 jpmorgen Exp $
 
 ; peak_find.pro  Returns the best position of the peak in the array
 ; given a variety of algorithms.  
 
 function peak_find, y_in, xaxis=xaxis_in, N_continuum=N_continuum, $
                     yerr=yerr_in, error=error, lose_to_errors=lose_to_errors, $
-                    plot=plot, quiet=quiet
+                    plot=plot, quiet=quiet, poly=poly, _EXTRA=extra
 
   ;; The maximum fraction of points we are willing to lose before if
   ;; there are more NANs in the error column than in the others.  If
@@ -50,29 +50,33 @@ function peak_find, y_in, xaxis=xaxis_in, N_continuum=N_continuum, $
      return, xaxis(max_idx)
   endif
   
-  ;; OK, we have at least 3 points to play with.  Run mpfitpeak,
-  ;; which fails gracefully, letting us clean up with polyfitting a
-  ;; parabola if necessary
-  nterms = 3                    ; for [gauss/mp]fit
-  if keyword_set(N_continuum) then $
-    nterms = nterms + N_continuum
+  if NOT keyword_set(poly) then begin
 
-  yfit = mpfitpeak(xaxis, y, params, nterms=nterms, error=yerr, $
-                   perror=perror, status=status)
+     ;; OK, we have at least 3 points to play with.  Run mpfitpeak,
+     ;; which fails gracefully, letting us clean up with polyfitting a
+     ;; parabola if necessary
+     nterms = 3                 ; for [gauss/mp]fit
+     if keyword_set(N_continuum) then $
+       nterms = nterms + N_continuum
 
-  if status gt 0 then begin
-     if status ge 5 and NOT keyword_set(quiet) then $
-       message, /CONTINUE, 'WARNING: mpfitpeak returned status ' + string(status)
-     error = perror[1]
-     if keyword_set(plot) then begin
-        plot, y_in, title=plot
-        plots, [params[1],params[1]], [-1E32,1E32]
+     yfit = mpfitpeak(xaxis, y, params, nterms=nterms, error=yerr, $
+                      perror=perror, status=status, _EXTRA=extra)
+
+     if status gt 0 then begin
+        if status ge 5 and NOT keyword_set(quiet) then $
+          message, /CONTINUE, 'WARNING: mpfitpeak returned status ' + string(status)
+        error = perror[1]
+        if keyword_set(plot) then begin
+           plot, y_in, title=plot
+           plots, [params[1],params[1]], [-1E32,1E32]
+        endif
+
+        return, params[1]
      endif
 
-     return, params[1]
-  endif
+  endif ;; just doing poly fit
 
-  ;; mpfitpeak seems to have failed.  Try a simple parabola
+  ;; mpfitpeak seems to have failed or we don't want to bother with it.  Try a simple parabola
   coefs = poly_fit(xaxis, y, 2, sigma=sigma)
   ;; I don't think poly_fit ever fails if it has enough points
   error = 0.5*sqrt((sigma[1]/coefs[2]^2) + (coefs[1]*sigma[2]/coefs[2]^2)^2)
