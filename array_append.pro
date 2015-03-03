@@ -1,5 +1,8 @@
 ; +
-; $Id: array_append.pro,v 1.1 2005/06/21 20:18:42 jpmorgen Exp $
+; $Id: array_append.pro,v 1.2 2015/03/03 19:12:04 jpmorgen Exp $
+
+;; --> NOTE that this is obselete.  It works fine for simple arrays,
+;; but for structures you will want pfo_array_append
 
 ; array_append 
 
