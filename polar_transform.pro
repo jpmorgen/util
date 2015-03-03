@@ -1,38 +1,66 @@
 ;+
-; $Id: polar_transform.pro,v 1.6 2003/06/16 21:39:02 jpmorgen Exp $
+; NAME: polar_transform
+;
+; PURPOSE: Take a polar transform of an image ... work in progress
+;
+; CATEGORY: Image processing
+;
+; CALLING SEQUENCE: 
+;  polar_im = polar_transform(im, center=center, rscale=rscale, phi0=phi0, $
+;                     pixels=pixels)
+;
+; INPUTS: im -- rectangular image to be transformed
+;
+; OPTIONAL INPUTS:
+; polar_im-- input this as a template of how big to make output
+;            polar_im.  Original array is not affected
+; center -- point in input image corresponding to r=0, theta=0.
+;           default is the center of the input image
+; rscale -- not sure how this works
+; phi0 -- phase to apply, in degrees
+;
+; KEYWORD PARAMETERS:
+;
+; OUTPUTS: polar_im -- the polar transform of im.  Defaults to be the
+;                      same size as the imput image
+;
+; OPTIONAL OUTPUTS: pixels -- an image of the same dimensions of 
+;
+; COMMON BLOCKS:  
+;   Common blocks are ugly.  Consider using package-specific system
+;   variables.
+;
+; SIDE EFFECTS:
+;
+; RESTRICTIONS:
+;
+; PROCEDURE:
+;
+; EXAMPLE:
+;
+; MODIFICATION HISTORY:
+;
+; $Id: polar_transform.pro,v 1.7 2015/03/03 18:22:33 jpmorgen Exp $
+;-
 
-; polar_transform  Takes the polar transform of an image.  The number
-; of rectangular image pixels contributing to each transformed pixel
-; image is contained in the optional parameter pixels
 
-pro polar_transform, im, polar_im, xc, yc, rscale=rscale, phi0=phi0, $
-                     pixels=pixels
+function polar_transform, im, center=center, rscale=rscale, phi0=phi0, $
+                     pixels=pixels, polar_im=polar_im
 
-  asize = size(im) 
-  nx = asize(1)
-  ny = asize(2)
-  
-  if NOT keyword_set(xc) then xc = nx/2.
-  if NOT keyword_set(yc) then yc = ny/2.
   if NOT keyword_set(phi0) then phi0 = 0.
   if NOT keyword_set(rscale) then rscale = 1.
 
   ;; Make arrays of radii and angles
-  imx = lonarr(nx*ny)
-  imy = lonarr(nx*ny)
-  radii=fltarr(nx*ny)
-  angles=fltarr(nx*ny)
-  for x=0,nx-1 do begin
-     for y=0,ny-1 do begin
-        elemindex = y*nx + x
-        imx(elemindex) = x
-        imy(elemindex) = y
-        radii(elemindex)=sqrt((x - xc)^2 + (y - yc)^2)
-        if ((y eq yc) and (x eq xc)) $
-          then angles(elemindex) = 0 $
-        else angles(elemindex)=atan((y - yc), (x - xc))
-     endfor
-  endfor
+  dims = size(im, /dimensions)
+  if NOT keyword_set(center) then $
+    center = dims/2
+  xr = findgen(dims[0])-center[0]
+  yc = findgen(dims[1])-center[1]
+  xx = xr # (yc*0 + 1)
+  yy = (xr*0 + 1) # yc
+
+  radii = sqrt(xx^2 + yy^2)
+  angles = atan(yy, xx)
   
   ;; Allow for phasing the angles to pretty up final array
   angles=angles*180./!pi-phi0
@@ -61,70 +89,40 @@ pro polar_transform, im, polar_im, xc, yc, rscale=rscale, phi0=phi0, $
 
   r_step=max(radii)/(nr-1)
   a_step=360./(na-1)
-;print,imx,imy
 
-; ; Try to fill in all the pixels in each row--didn't work
-; for ir=0,nr-1 do begin
-;     rl = (ir) * r_step
-;     rh = (ir + 1) * r_step
-;     ridx=where((radii ge rl) and (radii lt rh))
-; ;    print,'ridx=',ridx
-; ;    print,'radii(ridx)=',radii(ridx)
-; ;    print,'angles(ridx)=',angles(ridx)
-;     for ia=0,na-1 do begin
-;         al = (ia) * a_step - 180.
-;         ah = (ia + 1) * a_step - 180.
-; ;        print,'ridx=',ridx
-; ;        print,"al, ah",al, ah
-; ;        print,"rl, rh",rl, rh
-;         idx=where((angles(ridx) ge al) and (angles(ridx) lt ah),n)
-;         if (n gt 0) then begin
-;             x=imx(ridx(idx))
-;             y=imy(ridx(idx))
-; ;            print,'idx=', idx
-; ;            print,'ridx(idx)=', ridx(idx)
-; ;            print,'radii(ridx(idx))=',radii(ridx(idx))
-; ;            print,"idx=",idx, "al, ah",al, ah
-; ;            print,"rl, rh",rl, rh
-; ;            print,"x,y",x,y
-;             polar_im(ia,ir)=polar_im(ia,ir)+total(im(x,y))
-;             pixels(ia,ir)=pixels(ia,ir)+1
-;         end
-;     end
-; end
-
-  ;; This is the easy way to do the transformation, but it leaves a
-  ;; lot of empty pixels
-  for elemindex=long(0),nx*ny-1 do begin
+  ;; This is the easiest way to do the transformation, but it leaves a
+  ;; lot of empty pixels.  Note that IDL can index a 2D array in a
+  ;; serial way too (e.g. im[elemindex] saves us from defining x and y)
+  for elemindex=long(0), N_elements(im)-1 do begin
      r = floor(radii(elemindex)/r_step)
      a = floor((angles(elemindex))/a_step)
-     x=imx(elemindex)
-     y=imy(elemindex)
-     if finite(im[x,y]) eq 1 then begin
-        polar_im(a,r)=polar_im(a,r)+im(x,y)
+     if finite(im[elemindex]) eq 1 then begin
+        polar_im(a,r)=polar_im(a,r) + im[elemindex]
         pixels(a,r)=pixels(a,r)+1
      endif
   endfor
 
-  good_idx=where(pixels ne 0)
-  polar_im(good_idx)=polar_im(good_idx)/pixels(good_idx)
+  good_idx = where(pixels ne 0, complement=zero_idx)
+  polar_im(good_idx) = polar_im(good_idx)/pixels(good_idx)
+  polar_im(zero_idx) = !values.f_nan
+  
+  ;; Fill in blank pixels left by transform at small radii.  Use a
+  ;; spline fit through nearest neighbors.
+  for ir=0,nr/2 do begin
+     pixidx = where(finite(polar_im(*,ir)), count)
+     if (count eq 0) then $
+       CONTINUE
+     if count le 2 then begin
+        ;; spline doesn't like so few elements
+        polar_im(*,r) = median(polar_im(pixidx,ir))
+        CONTINUE
+     endif
+     new_row = spline(pixidx, polar_im(pixidx,ir), indgen(na))
+           polar_im(*,ir) = new_row(*)
 
-  ;; Fill in blank pixels using average of nearest neighbors
-;  for ir=0,nr-1 do begin
-;     pixidx=where(pixels(*,ir) gt 0, n)
-;     if (n eq 0) then begin
-;        polar_im(*,r)=0
-;        print, 'Empty row', ir
-;     end else begin
-;        if (n le 2) then begin  ; spline doesn't like so few elements
-;           polar_im(*,r)=median(polar_im(pixidx,ir))
-;        end else begin
-;           new_row=spline(pixidx, polar_im(pixidx,ir), indgen(na))
-;           polar_im(*,ir)=new_row(*)
-;        endelse
-;     endelse
-;     
-;  endfor
+  endfor
+
+  return, polar_im
 
 end
 
