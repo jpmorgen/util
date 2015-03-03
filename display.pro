@@ -1,5 +1,5 @@
 ;+
-; $Id: display.pro,v 1.3 2002/12/16 20:06:01 jpmorgen Exp $
+; $Id: display.pro,v 1.3 2002/12/16 20:06:01 jpmorgen Exp jpmorgen $
 
 ; display puts up a window with an image in it.  reuse uses a window
 ; of the same size and title, if it exists.  Specifying a filename is
@@ -41,9 +41,10 @@ pro display, im_or_fname, hdr, title=title, REUSE=reuse, zoom=zoom, rotate=rotat
   if N_elements(size(im, /DIMENSIONS)) ne 2 then message, 'ERROR: specify a valid filename or a 2D array to display.'
 
   if NOT keyword_set(zoom) then zoom=1.
+  if N_elements(zoom) eq 1 then zoom=[zoom, zoom]
   
   asize = size(im) & nx = asize(1) & ny = asize(2)
-  dim = congrid(im, nx*zoom, ny*zoom)
+  dim = congrid(im, nx*zoom[0], ny*zoom[1])
   if keyword_set(rotate) then dim = rotate(dim, rotate)
   asize = size(dim) & nx = asize(1) & ny = asize(2)
 
