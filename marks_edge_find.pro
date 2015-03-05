@@ -8,7 +8,7 @@ data=data_in
 
 IF KEYWORD_SET(Right) THEN BEGIN
 	data = REVERSE(data)
-	RETURN, ESREVER(MARKS_EDGE_FIND(data, Deviation=deviation, Value=value, Deriv1=deriv1, Deriv2=deriv2, Left=1, FirstDeriv = firstDeriv, SecondDeriv=secondDeriv), N_ELEMENTS(data))
+	RETURN, ESREVER(MARKS_EDGE_FIND(data, Deviation=deviation, Value=value, Deriv1=deriv1, Deriv2=deriv2, Left=1, FirstDeriv = firstDeriv, SecondDeriv=secondDeriv), N_ELEMENTS(data), error=1)
 ENDIF
 
 
