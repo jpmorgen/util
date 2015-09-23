@@ -12,7 +12,7 @@
 
 ; peak = first_peak_find(y, ['left' | 'right'], threshold=threshold, $
 ;   contrast=contrast, error=error, plot=plot, yerr=yerr, quiet=quiet, $
-;   poly=poly
+;   poly=poly, max_y=max_y
 ;
 ; DESCRIPTION: Uses threshold and contrast to spot the first value in
 ;   array y that is a decent-sized peak.  Then uses peak_find to
@@ -43,6 +43,12 @@
 ;   /quiet: don't print WARNING messages.  Passed to peak_find
 ;
 ;   /poly: force use of polynomial fitting in peak_find
+;
+;   max_y: max y to use for threshold and contrast calculations
+;   (default = calculated from data)
+;
+;   left_idx, right_idx: index into yin of left (right) side of peak,
+;   found by sliding down yin to find a local minimum 
 ;
 ; OUTPUTS:
 ;   return value is index of first peak
@@ -81,7 +87,7 @@
 
 function first_peak_find, yin, side, threshold=threshold_in, $
   contrast=contrast_in, error=error, plot=plot, yerr=yerr, quiet=quiet, $
-  poly=poly
+  poly=poly, max_y=max_y, left_idx=left_idx, right_idx=right_idx
 
   y = yin
   npts = N_elements(y)
@@ -93,8 +99,11 @@ function first_peak_find, yin, side, threshold=threshold_in, $
      y = reverse(y)
      peak = first_peak_find(y, 'left', threshold=threshold_in, $
                             contrast=contrast_in, yerr=yerr, error=error, $
-                            plot=plot, quiet=quiet, poly=poly)
+                            plot=plot, quiet=quiet, poly=poly, max_y=max_y, $
+                            left_idx=left_idx, right_idx=right_idx)
      peak = npts-1 - peak
+     left_idx = npts-1 - left_idx
+     right_idx = npts-1 - right_idx
      return, peak
   endif else $
     if side ne 'left' then $
@@ -110,28 +119,38 @@ function first_peak_find, yin, side, threshold=threshold_in, $
      y = y - min(y, /NAN)
   endif
 
+  ;; Use external max, if defined
+  if NOT keyword_set(max_y) then $
+     max_y = max(y, /NAN)
+
   ;; Set up default threshold and contrast.  This is really
   ;; application specific.  Check things out with the plot='title'
   ;; option to see what you need.
   if N_elements(threshold_in) eq 0 then begin
      threshold_in = 0.5
   endif
-  threshold = threshold_in*max(y, /NAN)
+  threshold = threshold_in*max_y
 
   if N_elements(contrast_in) eq 0 then begin
      contrast_in = 0.2 * threshold_in
   endif
-  contrast = contrast_in*max(y, /NAN)
+  contrast = contrast_in*max_y
 
   ;; Where handles NAN properly in this context
   peak_idx = where(y ge threshold, count)
-  if count eq 0 then message, 'ERROR: Threshold of ' + string(threshold_in) + ' too high'
+  if count eq 0 then begin
+     if NOT keyword_set(quiet) then $
+        message, 'WARNING: Threshold of ' + string(threshold_in) + ' too high, returning -1', /CONTINUE
+     left_idx  = -1
+     right_idx = -1
+     return, -1
+  endif
 
   ;; Start from the left side down low
   left_idx = peak_idx[0]
 
   ;; Now crawl over the function, recording the local maximum until
-  ;; you fall down from it by the threshold 
+  ;; you fall down from it by the contrast
   right_idx = left_idx + 1
   if right_idx ge npts then right_idx = npts-1
   max_idx = right_idx

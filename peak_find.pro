@@ -58,23 +58,28 @@ function peak_find, y_in, xaxis=xaxis_in, N_continuum=N_continuum, $
      nterms = 3                 ; for [gauss/mp]fit
      if keyword_set(N_continuum) then $
        nterms = nterms + N_continuum
+     
+     ;; Intercept the case where we have more nterms than points so as
+     ;; not to generate the word ERROR from mpfitpeak
+     if n_elements(xaxis) LT nterms OR n_elements(y) LT nterms then begin
+        message, /CONTINUE, 'WARNING: too little data to do mpfitpeak, defaulting to polynomial'
+     endif else begin
+        yfit = mpfitpeak(xaxis, y, params, nterms=nterms, error=yerr, $
+                         perror=perror, status=status, _EXTRA=extra)
 
-     yfit = mpfitpeak(xaxis, y, params, nterms=nterms, error=yerr, $
-                      perror=perror, status=status, _EXTRA=extra)
+        if status gt 0 then begin
+           if status ge 5 and NOT keyword_set(quiet) then $
+              message, /CONTINUE, 'WARNING: mpfitpeak returned status ' + string(status)
+           error = perror[1]
+           if keyword_set(plot) then begin
+              plot, y_in, title=plot
+              plots, [params[1],params[1]], [-1E32,1E32]
+           endif
 
-     if status gt 0 then begin
-        if status ge 5 and NOT keyword_set(quiet) then $
-          message, /CONTINUE, 'WARNING: mpfitpeak returned status ' + string(status)
-        error = perror[1]
-        if keyword_set(plot) then begin
-           plot, y_in, title=plot
-           plots, [params[1],params[1]], [-1E32,1E32]
-        endif
-
-        return, params[1]
-     endif
-
-  endif ;; just doing poly fit
+           return, params[1]
+        endif ;; sensible return from mpfit
+     endelse ;; intercept too little data
+  endif ;; doing mpfit
 
   ;; mpfitpeak seems to have failed or we don't want to bother with it.  Try a simple parabola
   coefs = poly_fit(xaxis, y, 2, sigma=sigma)
