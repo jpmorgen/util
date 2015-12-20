@@ -1,16 +1,29 @@
 ; $Id: normalize.pro,v 1.2 2003/03/10 18:36:23 jpmorgen Exp $
 
-; Normalize an array of arbitrary dimensions, setting all values below
-; cut to NAN
+; Normalize an array of arbitrary dimensions, ignoring all pixels
+; below a cut value of cut.  Algorithm is iterative.  The first
+; normalization factor is 1/median(im)
 
-function normalize, input_im, cut, factor=factor
+function normalize, $
+   input_im, $
+   cut, $
+   first_mean=first_mean, $ ;; first normalization factor.  If not specified, median is used
+   factor=factor ;; Return keyword is the factor by which the image was divided to normlize it
   ON_ERROR, 2
   if NOT keyword_set(cut) then cut = 0
   if cut lt 0 or cut ge 1 then $
     message, 'ERROR: cut must be between 0 and 1 (inclusive)'
 
-  ;; Start with the median to avoid being biased by extreme values
-  mean_of_im = median(input_im)
+  ;; By default, assume that the median is the best starting mean.
+  ;; This avoids being biased by extreme values.  However, for arrays
+  ;; with lots of small values and only a few high values that you
+  ;; want to normalize, this doesn't work, so enable a keyword
+  ;; to do the initialization
+  if N_elements(first_mean) eq 0 then $
+     mean_of_im = median(input_im) $
+  else $
+     mean_of_im = first_mean
+
   count = 0
   repeat begin
      last_num = count

@@ -59,7 +59,7 @@
 ; About to install new version
 ;
 ;-
-FUNCTION ESREVER, idx, size_or_data, error=Error
+FUNCTION ESREVER, idx, size_or_data;;, error=Error
 
   ;; Make sure inputs are specified
   if N_elements(idx) + N_elements(size_or_data) eq 0 then $
@@ -78,12 +78,13 @@ FUNCTION ESREVER, idx, size_or_data, error=Error
   ;; the array
   toReturn = dataSize-1 - idx
 
-;Account for possible elements that the user does not want un-reversed
-	if KEYWORD_SET(error) then begin
-		staticNumber = N_ELEMENTS(error)
-		for i=0, staticNumber-1 DO BEGIN
-			toReturn[error[i]] = idx[error[i]]
-		ENDFOR
-	ENDIF
+;; Handled this with an error keyword in marks_edge_find
+;;;Account for possible elements that the user does not want un-reversed
+;;	if KEYWORD_SET(error) then begin
+;;		staticNumber = N_ELEMENTS(error)
+;;		for i=0, staticNumber-1 DO BEGIN
+;;			toReturn[error[i]] = idx[error[i]]
+;;		ENDFOR
+;;	ENDIF
 return, toReturn
 END

@@ -1,14 +1,19 @@
-FUNCTION MARKS_EDGE_FIND, data_in, Deviation=deviation, Value=value, Deriv1=deriv1, Deriv2=deriv2, Left = left, Right = right, Firstderiv=firstderiv, SecondDeriv=secondDeriv, _Extra = ex
+FUNCTION MARKS_EDGE_FIND, data_in, Deviation=deviation, Value=value, Deriv1=deriv1, Deriv2=deriv2, Left = left, Right = right, Firstderiv=firstderiv, SecondDeriv=secondDeriv, climbFrom=climbFrom, error=error, _Extra = ex
 
 IF KEYWORD_SET(left) EQ 0 AND KEYWORD_SET(Right) EQ 0 THEN BEGIN
 	MESSAGE, 'Please specify left or right'
 ENDIF
 
+
 data=data_in
 
 IF KEYWORD_SET(Right) THEN BEGIN
-	data = REVERSE(data)
-	RETURN, ESREVER(MARKS_EDGE_FIND(data, Deviation=deviation, Value=value, Deriv1=deriv1, Deriv2=deriv2, Left=1, FirstDeriv = firstDeriv, SecondDeriv=secondDeriv), N_ELEMENTS(data), error=1)
+   ndata = N_ELEMENTS(data)
+   data = REVERSE(data)
+   if N_elements(climbFrom) ne 0 then begin
+      rclimbFrom=ESREVER(climbFrom, ndata)
+   endif
+   RETURN, ESREVER(MARKS_EDGE_FIND(data, Deviation=deviation, Value=value, Deriv1=deriv1, Deriv2=deriv2, Left=1, FirstDeriv = firstDeriv, SecondDeriv=secondDeriv, climbFrom=rclimbFrom, error=error, _EXTRA=ex), ndata)
 ENDIF
 
 
@@ -41,12 +46,12 @@ IF KEYWORD_SET(deviation) THEN BEGIN
 		deviation = deviation+(deriv2-value[0])
 		sum=sum+1
 	ENDIF
-toReturn = [bounds, (deviation/sum)]
-RETURN, toReturn
+error = (deviation/sum)
+RETURN, bounds
 ENDIF
 
 IF KEYWORD_SET(value) THEN BEGIN
-	RETURN, BOUNDRY_FIND(data, _EXTRA=ex)
+	RETURN, BOUNDRY_FIND(data, climbFrom=climbFrom, _EXTRA=ex)
 ENDIF
 
 IF KEYWORD_SET(deriv1) THEN BEGIN
