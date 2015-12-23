@@ -6,9 +6,13 @@
 ; standard deviation of the data (a 2D image) from that model,
 ; returning it in an array.
 
-function template_statistic, im, model, poisson=poisson
+function template_statistic, im, model, poisson=poisson, err_im=err_im
 
   deviation = im - model
+
+  if keyword_set(err_im) then begin
+     return, sigma = deviation/err_im
+  endif
 
   if NOT keyword_set(poisson) then begin
      ;; We are not sure of the statistics of the image.  Just subtract

@@ -102,7 +102,7 @@ function jpm_polyfit, x, y, order, bad_idx=bad_idx, title=title, noninteractive=
      if bad_meas_count gt 0 then begin
         oplot, plotx[good_idx[bad_meas_idx]], y[good_idx[bad_meas_idx]], $
                psym=square
-        legend, ['Good measurement, not replaced by poly fit', 'Bad measurement, replaced by poly fit'], psym=[psym_x, square], pos=pos, /norm
+        al_legend, ['Good measurement, not replaced by poly fit', 'Bad measurement, replaced by poly fit'], psym=[psym_x, square], pos=pos, /norm
      endif
      oplot, plotx, fity
      if keyword_set(measure_errors) then $

@@ -8,21 +8,28 @@ function normalize, $
    input_im, $
    cut, $
    first_mean=first_mean, $ ;; first normalization factor.  If not specified, median is used
+   mean=mean, $ ;; use the mean as the first normalization factor
    factor=factor ;; Return keyword is the factor by which the image was divided to normlize it
   ON_ERROR, 2
   if NOT keyword_set(cut) then cut = 0
   if cut lt 0 or cut ge 1 then $
     message, 'ERROR: cut must be between 0 and 1 (inclusive)'
 
+  if N_elements(mean) + N_elements(first_mean) gt 1 then $
+     message, 'ERROR: specify either mean or first_mean'
+
   ;; By default, assume that the median is the best starting mean.
   ;; This avoids being biased by extreme values.  However, for arrays
   ;; with lots of small values and only a few high values that you
   ;; want to normalize, this doesn't work, so enable a keyword
   ;; to do the initialization
-  if N_elements(first_mean) eq 0 then $
-     mean_of_im = median(input_im) $
+  if N_elements(first_mean) ne 0 then $
+     mean_of_im = first_mean $
   else $
-     mean_of_im = first_mean
+     if N_elements(mean) ne 0 then $
+        mean_of_im = mean(input_im, /NAN) $
+     else $
+        mean_of_im = median(input_im)
 
   count = 0
   repeat begin
