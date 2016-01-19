@@ -35,7 +35,7 @@ IF N_elements(climbFrom) ne 0 THEN BEGIN
    toReturn = xTen
 ENDIF
 
-IF (KEYWORD_SET(singlepoint) EQ 0) and (KEYWORD_SET(climbFrom) EQ 0) THEN BEGIN
+IF (KEYWORD_SET(singlepoint) EQ 0) and N_elements(climbFrom) EQ 0 THEN BEGIN
 ;Work backwords from the high end guess to find the first low end guess
 	IF data(xOne) NE low THEN BEGIN
 		xOne = xTen

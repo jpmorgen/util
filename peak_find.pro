@@ -62,7 +62,8 @@ function peak_find, y_in, xaxis=xaxis_in, N_continuum=N_continuum, $
      ;; Intercept the case where we have more nterms than points so as
      ;; not to generate the word ERROR from mpfitpeak
      if n_elements(xaxis) LT nterms OR n_elements(y) LT nterms then begin
-        message, /CONTINUE, 'WARNING: too little data to do mpfitpeak, defaulting to polynomial'
+        if NOT keyword_set(quiet) then $
+           message, /CONTINUE, 'WARNING: too little data to do mpfitpeak, defaulting to polynomial'
      endif else begin
         yfit = mpfitpeak(xaxis, y, params, nterms=nterms, error=yerr, $
                          perror=perror, status=status, _EXTRA=extra)

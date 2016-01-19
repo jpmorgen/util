@@ -163,6 +163,16 @@ function first_peak_find, yin, side, threshold=threshold_in, $
      endif
      right_idx = right_idx + 1
   endwhile
+  
+  ;; Handle the pathological case that there are no good points to the
+  ;; right of the max
+  junk = where(finite(y[min([peak_idx[0]+1, npts-1]):right_idx]) eq 0, count)
+  if count eq 0 then begin
+     if NOT keyword_set(quiet) then $     
+        message, /CONTINUE, 'WARNING: no good points to the right of max.  Returning max'
+     error = !values.F_NAN
+     return, peak_idx[0]
+  endif
 
   ;; Move the left_idx to a symetric position on the other side of
   ;; the peak
@@ -171,6 +181,16 @@ function first_peak_find, yin, side, threshold=threshold_in, $
     (y[left_idx] gt max_y - contrast or finite(y[left_idx]) eq 0) do begin
      left_idx = left_idx - 1
   endwhile
+
+  ;; Handle the pathological case that there are no good points to the
+  ;; left of the max
+  junk = where(finite(y[left_idx:max([0, peak_idx[0]-1])]) eq 0, count)
+  if count eq 0 then begin
+     if NOT keyword_set(quiet) then $
+        message, /CONTINUE, 'WARNING: no good points to the left of max.  Returning max'
+     error = !values.F_NAN
+     return, peak_idx[0]
+  endif
 
   local_max = max(y[left_idx:right_idx], tidx, /NAN)
   max_peak = tidx + left_idx
