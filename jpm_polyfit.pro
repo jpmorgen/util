@@ -44,6 +44,7 @@ function jpm_polyfit, x, y, order, bad_idx=bad_idx, title=title, noninteractive=
   dash_3dot = 4
   long_dash=5
 
+
   if NOT keyword_set(noninteractive) then $
     window,winnum
 
@@ -64,9 +65,16 @@ function jpm_polyfit, x, y, order, bad_idx=bad_idx, title=title, noninteractive=
         good_idx = where(finite(y) eq 1 and finite(x) eq 1 and $
                          finite(measure_errors) eq 1 and $
                          measure_errors ne 0, count)
-        coefs = poly_fit(x[good_idx], y[good_idx], order, $
+        ;; Fitting a 0th order polynomial in the non-interactive case
+        ;; amounts to taking the average.  Generally it is better to take
+        ;; the median in this case
+        if keyword_set(noninteractive) and order eq 0 then $
+           return, median(y[good_idx]) 
+       coefs = poly_fit(x[good_idx], y[good_idx], order, $
                         measure_errors=abs(measure_errors[good_idx]))
      endif else begin
+        if keyword_set(noninteractive) and order eq 0 then $
+           return, median(y[good_idx])
         coefs = poly_fit(x[good_idx], y[good_idx], order)
      endelse
 
